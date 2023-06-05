@@ -53,6 +53,7 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
     #State Value function give you the value of each state under a specific policy,
     # assuming the agent continues to act according to that policy.
     V_Expected = np.zeros(nS)
+    V_old= np.copy(V_Expected)
 
 
     while True:
@@ -60,13 +61,13 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
         for s in range(nS):#iterate over all states
             V=0
             for a in range(aS): #iterate over all the actions per state
-                for prob, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
-                 V += policy[s][a] * prob*(reward+gama*V_Expected[next_state])
+                for probability, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
+                 V += policy[s][a] * probability *(reward+gamma*V_Expected[next_state])
                  # Calculate the expected return for this transition,
                  # then add it to the total value of the current state-action pair
                  #p(s',r|s,a),  probability of ending up in next state s' with reward r, given that the agent was in state s and took action a
 
-            delta = max(delta, V_Expected(s) - V_Expected(s - 1))
+            delta = max(delta, V_Expected(s) - V_old[s])
             V_Expected[s]= V #Update the array with current value
 
 
@@ -79,7 +80,7 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
 
 
 
-def policy_improvement(P, nS, nA, value_from_policy, gamma=0.9):
+def policy_improvement(P, nS, nA, V_Expected, gamma=0.9):
     """Given the value function from policy improve the policy.
 
     Parameters:
@@ -107,8 +108,8 @@ def policy_improvement(P, nS, nA, value_from_policy, gamma=0.9):
         #  future reward the agent will receive if it takes action a in state s and then follows its policy for all future actions.
             q=np.zeros(nA)
             for a in range(aS):
-                for prob, next_state, reward, done  in P[s][a]:
-                q[a]+= prob * (reward + gama * V_Expected[next_state])
+                for probability, next_state, reward, done  in P[s][a]:
+                q[a]+= probability * (reward + gama * V_Expected[next_state])
 
             Sick_Action =np.argmax(q) #tells you value of each action
             policy[s] = np.eye(nA)[Sick_Action]  # creates identity matrix and vector where the best action is a 1
@@ -149,7 +150,7 @@ def policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8):
 while True:
     new_policy = policy.copy()
     value_function = policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8)
-    new_policy = policy_improvement(P, nS, nA, value_from_policy, gamma=0.9)
+    new_policy = policy_improvement(P, nS, nA, V_Expected, gamma=0.9)
     if new_policy == True:
         break
     return value_function, new_policy
