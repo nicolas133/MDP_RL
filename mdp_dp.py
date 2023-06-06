@@ -1,7 +1,6 @@
 ### MDP Value Iteration and Policy Iteration
 ### Reference: https://web.stanford.edu/class/cs234/assignment1/index.html 
 import numpy as np
-from numpy import argmax
 
 np.set_printoptions(precision=3)
 
@@ -31,7 +30,7 @@ the parameters P, nS, nA, gamma are defined as follows:
 """
 
 def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
-    """Evaluate the value function from a given policy for all the differnt states.
+    """Evaluate the value function from a given policy.
 
     Parameters:
     ----------
@@ -48,34 +47,16 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
         The value function of the given policy, where value_function[s] is
         the value of state s
     """
-    # First Part of Policy Iteration
-    # Intilize state value function size of possible states
-    #State Value function give you the value of each state under a specific policy,
-    # assuming the agent continues to act according to that policy.
-    V_Expected = np.zeros(nS)
-    V_old= np.copy(V_Expected)
-    while True:
-        delta=0# change in expected value
-        for s in range(nS):#iterate over all states
-            V=0
-            for a in range(nA): #iterate over all the actions per state
-                for probability, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
-                    V += policy[s][a] * probability *(reward+gamma*V_Expected[next_state])
-                    # Calculate the expected return for this transition,
-                    # then add it to the total value of the current state-action pair
-                    #p(s',r|s,a),  probability of ending up in next state s' with reward r, given that the agent was in state s and took action a
-
-            delta = max(delta, np.abs(V_Expected[s] - V_old[s]))
-            V_old[s] = V_Expected[s]
-            V_Expected[s]= V #Update the array with current value
-
-        if delta < tol: # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
-            break
-    return V_Expected
+    
+    value_function = np.zeros(nS)
+    ############################
+    # YOUR IMPLEMENTATION HERE #
+    
+    ############################
+    return value_function
 
 
-
-def policy_improvement(P, nS, nA, V_Expected, gamma=0.9):
+def policy_improvement(P, nS, nA, value_from_policy, gamma=0.9):
     """Given the value function from policy improve the policy.
 
     Parameters:
@@ -91,38 +72,17 @@ def policy_improvement(P, nS, nA, V_Expected, gamma=0.9):
         to take in that state according to the environment dynamics and the 
         given value function.
     """
-    # Action Value Function give a value for each possible action in each state
 
     new_policy = np.ones([nS, nA]) / nA
-    policy_stable=True
+	############################
+	# YOUR IMPLEMENTATION HERE #
 
-    for s in range(nS):
-        Prev_action_Value=np.copy(new_policy[s])
-        #  given a state s and an action a, the value of the action is the expected
-        #  future reward the agent will receive if it takes action a in state s and then follows its policy for all future actions.
-
-            q=np.zeros(nA)
-            for a in range(nA):
-                for probability, next_state, reward, done  in P[s][a]:
-                    q[a]+= probability * (reward + gamma * V_Expected[next_state])
-
-            Sick_Action =np.argmax(q) #tells the bes policy
-            new_policy[s] = np.eye(nA)[Sick_Action]  # creates identity matrix and vector where the best action is a 1
-
-            if not np.array_equal(new_policy[s]) != np.all(Prev_action_Value):
-                policy_stable = False
-
-    return new_policy, policy_stable
-
-
-
-#Argmax used to return the the class with the largest predicted probality
-
+	############################
+    return new_policy
 
 
 def policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8):
-"""
-    Runs policy iteration.
+    """Runs policy iteration.
 
     You should call the policy_evaluation() and policy_improvement() methods to
     implement this method.
@@ -138,18 +98,16 @@ def policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8):
     ----------
     new_policy: np.ndarray[nS,nA]
     V: np.ndarray[nS]
-"""
-while True:
+    """
+    new_policy = policy.copy()
+	############################
+	# YOUR IMPLEMENTATION HERE #
 
-    value_function = policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8)
-    new_policy, policy_stable = policy_improvement(P, nS, nA, V_Expected, gamma=0.9)
-    if policy_stable == True :
-        break
-    policy = new_policy
-return V_Expected, policy
+	############################
+    return new_policy, V
 
 def value_iteration(P, nS, nA, V, gamma=0.9, tol=1e-8):
-"""
+    """
     Learn value function and policy by using value iteration method for a given
     gamma and environment.
 
@@ -167,31 +125,15 @@ def value_iteration(P, nS, nA, V, gamma=0.9, tol=1e-8):
     V_new: np.ndarray[nS]
     """
     
-    V_Expected=np.zeros(nS)
-    policy= np.zeros(nS)
+    V_new = V.copy()
     ############################
-    while True:
-        delta=0# change in expected value
-        for s in range(nS):#iterate over all states
-            V = V_Expected[s] # keep track of old value
-            q= np.zeros(nA)
-            for a in range(nA): #iterate over all the actions per state
-                for probability, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
-                    q[a] += probability * (reward + gamma * V_Expected[next_state])
+    # YOUR IMPLEMENTATION HERE #
 
-            V_Expected[s] = np.max(q)
-            policy[s] = np.argmax(q)
-            delta = max(delta, abs(V - V_Expected[s]))
-        if delta < tol:  # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
-                break
-
-
-
-            ############################
-    return policy, V_Expected
+    ############################
+    return policy_new, V_new
 
 def render_single(env, policy, render = False, n_episodes=100):
-"""
+    """
     Given a game envrionemnt of gym package, play multiple episodes of the game.
     An episode is over when the returned value for "done" = True.
     At each step, pick an action and collect the reward and new state from the game.
@@ -207,9 +149,7 @@ def render_single(env, policy, render = False, n_episodes=100):
     Returns:
     ------
     total_rewards: the total number of rewards achieved in the game.
-
-    episodes: sequence of action from intial state to terminal state
- """
+    """
     total_rewards = 0
     for _ in range(n_episodes):
         ob = env.reset() # initialize the episode
@@ -217,9 +157,9 @@ def render_single(env, policy, render = False, n_episodes=100):
         while not done:
             if render:
                 env.render() # render the game
-            action = policy[ob]  # choose an action according to the policy
-            ob, reward, done, _ = env.step(action)  # take the action and get the new state and reward
-            total_rewards += reward
+            ############################
+            # YOUR IMPLEMENTATION HERE #
+            
     return total_rewards
 
 
