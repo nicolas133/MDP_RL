@@ -80,12 +80,13 @@ def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
                     # Calculate the expected return for this transition,
                     # then add it to the total value of the current state-action pair
                     #p(s',r|s,a),  probability of ending up in next state s' with reward r, given that the agent was in state s and took action a
-            print(f'{V_Expected}')
-            print(f'{V_old}')
-            delta = max(delta, np.abs(V_Expected[s] - V_old[s]))
-            print(f'Delta= {delta} ')
+            #print(f'{V_Expected}')
+            #print(f'{V_old}')
             V_old[s] = V_Expected[s]
-            V_Expected[s]= V #Update the array with current value
+            V_Expected[s] = V  # Update the array with current value
+            delta = max(delta, np.abs(V_Expected[s] - V_old[s]))
+            #print(f'Delta= {delta} ')
+
 
         if delta < tol: # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
             break
@@ -129,6 +130,7 @@ def policy_improvement(P, nS, nA, V_Expected, gamma=0.9):
         for a in range(nA):
             for probability, next_state, reward, done  in P[s][a]:
                 q[a]+= probability * (reward + gamma * V_Expected[next_state])
+                #print(f'value of action {q}')
                 #gives you value associated with every action and the value of the action afterrwrods
 
 
@@ -170,6 +172,7 @@ def policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8):
         V_Expected = policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8)
         new_policy, policy_stable = policy_improvement(P, nS, nA, V_Expected, gamma=0.9)
         if policy_stable == True :
+            #print(f'policy is stable ')
             break
         policy = new_policy
     return V_Expected, policy
