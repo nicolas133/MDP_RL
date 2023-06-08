@@ -128,19 +128,25 @@ def policy_improvement(P, nS, nA, V_Expected, gamma=0.9):
 
         q=np.zeros(nA)
         for a in range(nA):
-            for probability, next_state, reward, done  in P[s][a]:
+            for probability, next_state, reward, done in P[s][a]:
                 q[a]+= probability * (reward + gamma * V_Expected[next_state])
                 #print(f'value of action {q}')
                 #gives you value associated with every action and the value of the action afterrwrods
 
 
         Sick_Action =np.argmax(q) #tells us the index of the best policy
-        new_policy[s] = np.eye(nA)[Sick_Action]  # creates identity matrix and vector where the best action is a 1
+        new_policy[s] = np.eye(nA)[Sick_Action]  # creates identity matrix and vector where the prob of best action is a 1
+        #print(f'new policy is:{new_policy}')
         # With a probability of 1 in the column of  the action that maximizes the expected return, as determined by np.argmax(q)
-        if not np.all_equal(new_policy[s]) != np.all(Prev_action_Value):
+        #print(f'this point')
+        if not np.array_equal(new_policy[s], Prev_action_Value):
             policy_stable = False
+            #print(f'policy aint stable ')
 
-    return new_policy, policy_stable
+    return new_policy
+    print(f' this policy is {policy_stable}')
+
+
 
 
 
@@ -168,57 +174,67 @@ def policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8):
     V: np.ndarray[nS]
 """
     while True:
-
+        policy_stable = True
         V_Expected = policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8)
-        new_policy, policy_stable = policy_improvement(P, nS, nA, V_Expected, gamma=0.9)
+        old_policy= policy # set old policy equal to value of policy before updating
+        new_policy = policy_improvement(P, nS, nA, V_Expected, gamma=0.9)
+        for s in range(nS):
+            old_act =np.argmax(old_policy[s])
+            act_best= np.argmax(new_policy[s])
+            if  old_act != act_best:
+                policy_stable= False
+
+        policy = new_policy
+
         if policy_stable == True :
             #print(f'policy is stable ')
             break
-        policy = new_policy
-    return V_Expected, policy
+
+
+    return policy, V_Expected
 
 
 def value_iteration(P, nS, nA, V, gamma=0.9, tol=1e-8):
-    """
-    Learn value function and policy by using value iteration method for a given
-    gamma and environment.
+        """
+        Learn value function and policy by using value iteration method for a given
+        gamma and environment.
 
-    Parameters:
-    ----------
-    P, nS, nA, gamma:
-        defined at beginning of file
-    V: value to be updated
-    tol: float
-        Terminate value iteration when
-            max |value_function(s) - prev_value_function(s)| < tol
-    Returns:
-    ----------
-    policy_new: np.ndarray[nS,nA]
-    V_new: np.ndarray[nS]
-    """
+        Parameters:
+        ----------
+        P, nS, nA, gamma:
+            defined at beginning of file
+        V: value to be updated
+        tol: float
+            Terminate value iteration when
+                max |value_function(s) - prev_value_function(s)| < tol
+        Returns:
+        ----------
+        policy_new: np.ndarray[nS,nA]
+        V_new: np.ndarray[nS]
+        """
 
-    V_Expected=np.zeros(nS)
-    policy= np.zeros(nS)
-    ############################
-    while True:
-        delta=0# change in expected value
-        for s in range(nS):#iterate over all states
-            V = V_Expected[s] # keep track of old value
-            q= np.zeros(nA)
-            for a in range(nA): #iterate over all the actions per state
-                for probability, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
-                    q[a] += probability * (reward + gamma * V_Expected[next_state])
+        V_Expected=np.zeros(nS)
+        policy= np.zeros([nS,nA])
+        ############################
+        while True:
+            delta=0# change in expected value
+            for s in range(nS):#iterate over all states
+                V = V_Expected[s] # keep track of old value
+                q= np.zeros(nA)
+                for a in range(nA): #iterate over all the actions per state
+                    for probability, next_state, reward, done in P[s][a]: #iterate over all possible probs for the action ie account for slippery tiles
+                        q[a] += probability * (reward + gamma * V_Expected[next_state])
 
-            V_Expected[s] = np.max(q)
-            policy[s] = np.argmax(q)
-            delta = max(delta, abs(V - V_Expected[s]))
-        if delta < tol:  # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
-                break
+                V_Expected[s] = np.max(q)
+                policy[s] = np.argmax(q)
+                delta = max(delta, abs(V - V_Expected[s]))
+            if delta < tol:  # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
+                    break
 
 
 
-            ############################
-    return policy, V_Expected
+                ############################
+        return policy, V_Expected
 
 def render_single(env, policy, render = False, n_episodes=100):
     """
@@ -248,7 +264,7 @@ def render_single(env, policy, render = False, n_episodes=100):
             if render:
                 env.render() # render the game
             action = policy[ob]  # choose an action according to the policy
-            ob, reward, done, _ = env.step(action)  # take the action and get the new state and reward
+            ob, reward, done = env.step(action)  # take the action and get the new state and reward
             total_rewards += reward
     return total_rewards
 
@@ -272,6 +288,183 @@ def test_policy_evaluation(env):
     assert np.allclose(test_v1, V1, atol=1e-3)
     assert np.allclose(test_v2, V2, atol=1e-3)
 
+def test_policy_improvement(env):
+    '''policy_improvement (20 points)'''
+    np.random.seed(595)
+    V1 = np.random.rand(env.nS)
+    new_policy1 = policy_improvement(env.P, env.nS, env.nA, V1)
+    test_policy1 = np.array([[1., 0., 0., 0.],
+                             [0., 0., 0., 1.],
+                             [0., 0., 0., 1.],
+                             [0., 0., 1., 0.],
+                             [0., 0., 0., 1.],
+                             [1., 0., 0., 0.],
+                             [0., 0., 1., 0.],
+                             [1., 0., 0., 0.],
+                             [0., 0., 0., 1.],
+                             [0., 0., 0., 1.],
+                             [0., 1., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [0., 0., 0., 1.],
+                             [0., 0., 1., 0.],
+                             [1., 0., 0., 0.]])
+
+    V2 = np.zeros(env.nS)
+    new_policy2 = policy_improvement(env.P, env.nS, env.nA, V2)
+    test_policy2 = np.array([[1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [1., 0., 0., 0.],
+                             [0., 1., 0., 0.],
+                             [1., 0., 0., 0.]])
+
+    assert np.allclose(test_policy1, new_policy1)
+    assert np.allclose(test_policy2, new_policy2)
+
+def test_policy_iteration():
+    '''policy_iteration (20 points)'''
+    random_policy1 = np.ones([env.nS, env.nA]) / env.nA
+
+    np.random.seed(595)
+    random_policy2 = np.random.rand(env.nS, env.nA)
+    random_policy2 = random_policy2 / random_policy2.sum(axis=1)[:, None]
+
+    policy_pi1, V_pi1 = policy_iteration(env.P, env.nS, env.nA, random_policy1, tol=1e-8)
+    policy_pi2, V_pi2 = policy_iteration(env.P, env.nS, env.nA, random_policy2, tol=1e-8)
+
+    optimal_policy = np.array([[1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [0., 1., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 1., 0.],
+                               [0., 1., 0., 0.],
+                               [1., 0., 0., 0.]])
+    optimal_V = np.array([0.069, 0.061, 0.074, 0.056, 0.092, 0., 0.112, 0., 0.145,
+                          0.247, 0.3, 0., 0., 0.38, 0.639, 0.])
+
+    policy_pi3, V_pi3 = policy_iteration(env2.P, env2.nS, env2.nA, random_policy1, tol=1e-8)
+    optimal_policy2 = np.array([[0., 1., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 1., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 0., 1., 0.],
+                                [1., 0., 0., 0.]])
+    optimal_V2 = np.array([0.59, 0.656, 0.729, 0.656, 0.656, 0., 0.81, 0., 0.729,
+                           0.81, 0.9, 0., 0., 0.9, 1., 0.])
+
+    assert np.allclose(policy_pi1, optimal_policy)
+    assert np.allclose(V_pi1, optimal_V, atol=1e-3)
+    assert np.allclose(policy_pi2, optimal_policy)
+    assert np.allclose(V_pi2, optimal_V, atol=1e-3)
+    assert np.allclose(policy_pi3, optimal_policy2)
+    assert np.allclose(V_pi3, optimal_V2, atol=1e-3)
+
+def test_value_iteration():
+    '''value_iteration (20 points)'''
+    np.random.seed(10000)
+    V1 = np.random.rand(env.nS)
+    policy_vi1, V_vi1 = value_iteration(env.P, env.nS, env.nA, V1, tol=1e-8)
+
+    V2 = np.zeros(env.nS)
+    policy_vi2, V_vi2 = value_iteration(env.P, env.nS, env.nA, V2, tol=1e-8)
+
+    optimal_policy = np.array([[1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 0., 1.],
+                               [0., 1., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [1., 0., 0., 0.],
+                               [0., 0., 1., 0.],
+                               [0., 1., 0., 0.],
+                               [1., 0., 0., 0.]])
+    optimal_V = np.array([0.069, 0.061, 0.074, 0.056, 0.092, 0., 0.112, 0., 0.145,
+                          0.247, 0.3, 0., 0., 0.38, 0.639, 0.])
+
+    policy_vi3, V_vi3 = value_iteration(env2.P, env2.nS, env2.nA, V2)
+
+    optimal_policy2 = np.array([[0., 1., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 1., 0., 0.],
+                                [0., 1., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [1., 0., 0., 0.],
+                                [0., 0., 1., 0.],
+                                [0., 0., 1., 0.],
+                                [1., 0., 0., 0.]])
+    optimal_V2 = np.array([0.59, 0.656, 0.729, 0.656, 0.656, 0., 0.81, 0., 0.729,
+                           0.81, 0.9, 0., 0., 0.9, 1., 0.])
+
+    assert np.allclose(policy_vi1, optimal_policy)
+    assert np.allclose(V_vi1, optimal_V, atol=1e-3)
+    assert np.allclose(policy_vi2, optimal_policy)
+    assert np.allclose(V_vi2, optimal_V, atol=1e-3)
+    assert np.allclose(policy_vi3, optimal_policy2)
+    assert np.allclose(V_vi3, optimal_V2, atol=1e-3)
+
+
+# ---------------------------------------------------------------
+def test_render_single():
+    '''render_single (20 points)'''
+    print("\n" + "-" * 25 + "\nBeginning Policy Iteration\n" + "-" * 25)
+    random_policy = np.ones([env.nS, env.nA]) / env.nA
+    p_pi, V_pi = policy_iteration(env.P, env.nS, env.nA, random_policy, tol=1e-8)
+    r_pi = render_single(env, p_pi, False, 50)
+    print("total rewards of PI: ", r_pi)
+
+    print("\n" + "-" * 25 + "\nBeginning Value Iteration\n" + "-" * 25)
+    V = np.zeros(env.nS)
+    p_vi, V_vi = value_iteration(env.P, env.nS, env.nA, V, tol=1e-8)
+    r_vi = render_single(env, p_vi, False, 50)
+    print("total rewards of VI: ", r_vi)
+
+    assert r_pi > 30
+    assert r_vi > 30
+
+
 
 def main():
     # Evaluate deterministic
@@ -285,6 +478,10 @@ def main():
     env = env.unwrapped
     print("yo whats up")
     test_policy_evaluation(env)
+    test_policy_improvement(env)
+    test_policy_iteration()
+    test_render_single(env)
+
 
 if __name__ == "__main__":
     main()
