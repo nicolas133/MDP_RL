@@ -12,13 +12,13 @@ np.set_printoptions(precision=3)
 env = gym.make("FrozenLake-v0")
 env = env.unwrapped
 
-# Evaluate deterministic
-# register(
-#     id='Deterministic-4x4-FrozenLake-v0',
-#     entry_point='gym.envs.toy_text.frozen_lake:FrozenLakeEnv',
-#     kwargs={'map_name': '4x4',
-#             'is_slippery': False})
-# env1` = gym.make("Deterministic-4x4-FrozenLake-v0")
+#Evaluate deterministic
+#register(
+    #id='Deterministic-4x4-FrozenLake-v0',
+    #entry_point='gym.envs.toy_text.frozen_lake:FrozenLakeEnv',
+   # kwargs={'map_name': '4x4',
+            #'is_slippery': False})
+#env1 = gym.make("Deterministic-4x4-FrozenLake-v0")
 
 
 """
@@ -47,26 +47,10 @@ the parameters P, nS, nA, gamma are defined as follows:
 """
 
 def policy_evaluation(P, nS, nA, policy, gamma=0.9, tol=1e-8):
-    """Evaluate the value function from a given policy for all the differnt states.
+    """Evaluate the State value function from a given policy for all the differnt states."""
 
-    Parameters:
-    ----------
-    P, nS, nA, gamma:
-        defined at beginning of file
-    policy: np.array[nS,nA]
-        The policy to evaluate. Maps states to actions.
-    tol: float
-        Terminate policy evaluation when
-            max |value_function(s) - prev_value_function(s)| < tol
-    Returns:
-    -------
-    value_function: np.ndarray[nS]
-        The value function of the given policy, where value_function[s] is
-        the value of state s
-    """
     # First Part of Policy Iteration
     # Intilize state value function size of possible states
-    #State Value function give you the value of each state under a specific policy,
     # assuming the agent continues to act according to that policy.
     V_Expected = np.zeros(nS)
     V_old= np.copy(V_Expected)
@@ -229,9 +213,16 @@ def value_iteration(P, nS, nA, V, gamma=0.9, tol=1e-8):
                 policy[s] = np.argmax(q)
                 delta = max(delta, abs(V - V_Expected[s]))
             if delta < tol:  # ie value has converged dif is soo soo ssmall thus break out of loop as we found expected value for state action pair
-                    break
+                break
+        for s in range(nS):  # iterate over all states
+            q = np.zeros(nA)
+            for a in range(nA):  # iterate over all the actions per state
+                for probability, next_state, reward, done in P[s][a]:  # iterate over all possible probs for the action ie account for slippery tiles
+                    q[a] += probability * (reward + gamma * V_Expected[next_state])
 
 
+            sick_action = np.argmax(q)
+            policy[s]=np.eye(nA)[sick_action]
 
                 ############################
         return policy, V_Expected
@@ -263,8 +254,8 @@ def render_single(env, policy, render = False, n_episodes=100):
         while not done:
             if render:
                 env.render() # render the game
-            action = policy[ob]  # choose an action according to the policy
-            ob, reward, done = env.step(action)  # take the action and get the new state and reward
+            action = np.argmax(policy[ob])  # choose an action according to the policy
+            ob, reward, done, info = env.step(action)  # take the action and get the new state and reward
             total_rewards += reward
     return total_rewards
 
@@ -477,10 +468,10 @@ def main():
     env = gym.make('FrozenLake-v0')
     env = env.unwrapped
     print("yo whats up")
-    test_policy_evaluation(env)
-    test_policy_improvement(env)
-    test_policy_iteration()
-    test_render_single(env)
+    #test_policy_evaluation(env)
+    #test_policy_improvement(env)
+    #test_policy_iteration(env)
+    #test_render_single(env)
 
 
 if __name__ == "__main__":
