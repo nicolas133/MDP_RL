@@ -1,0 +1,60 @@
+import rospy
+from sensor_msgs.msg import LaserScan
+import numpy as np
+
+def lidarCallback(msg):
+    rospy.loginfo("Received LiDAR scan with %d measurements", len(msg.ranges))
+    print(msg)
+
+
+def lidar_sub():
+    rospy.init_node('lidar_sub', anonymous=True)#intialize nodd
+
+    rospy.Subscriber("/scan", LaserScan, lidarCallback()) # name of topic, name of message type,
+
+    rospy.spin()  # loop waiting for the callback function
+
+
+def grid_map():
+    map_data = rospy.get_param(map_file)
+    Gridy_map= np.copy(map_data)
+    height = len(map_data)
+    width  = len(map_data[0])
+    scale_factor = width / grid_size
+    # go through lidar data and assign
+    for x in range(width):
+        for y in range(height):
+            map_x = int(width * scale_factor)
+            map_y = int(height * scale_factor)
+            Gridy_map[map_x][map_y]=map_data[width][height]
+            # Map discrete points to cells
+return Gridy_map
+
+
+
+cell_size=1
+def grid_position(angle,distance):
+    grid= np.zeros(50,50)
+    for angle, distance in enumerate(sensor_msgs.msg):
+        anlge_rad = np.deg2rad(angle)
+        x = np.cosine(anlge_rad) * distance
+        y =  np.sin(anlge_rad) * distance
+        # Map the robot's position to a grid cell
+        grid_robot_x = int(x/cell_size)
+        grid_robot_y = int(y/cell_size)
+
+
+        print(f'ROSMASTER Located in Column{grid_robot_y} and Row{grid_robot_x} ')
+        grid[grid_robot_x][grid_robot_y = 1 # set position on grid=1
+
+
+
+
+if __name__ == '__main__':
+    lidar_sub()
+
+
+
+
+
+# See PyCharm help at https://www.jetbrains.com/help/pycharm/
