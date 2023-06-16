@@ -1,0 +1,84 @@
+# Keyron Linarez
+# This File takes an greyscale image, and breaks it into a 8 x 7 matrix with 1s and 0s representing black and white squares
+# NOTE: this is a hardcoded example for a specefic file in our project ie NOT FINISHED
+
+import cv2 as cv 
+import numpy as np
+from numpy import savetxt
+import sys
+np.set_printoptions(threshold=sys.maxsize)
+
+# Create window with freedom of dimensions
+cv.namedWindow("output", cv.WINDOW_NORMAL)    
+img = cv.imread("cropped_grid_maze.png", 0)
+# resize image to fit the window
+img = cv.resize(img, (804, 700)) 
+cv.imshow('Image',img)
+
+
+
+
+# dimensions, w and h of the image
+dimensions = img.shape
+height = img.shape[0]
+width = img.shape[1]
+print("height = " + str(height))
+print("width = " + str(width))
+
+# og
+# grid height = 200.125
+# grid width = 201.143
+
+# N x M matrix
+N = 8
+M = 7
+# define matrix of 1s and 0s
+myMat = [[0]*M]*N
+
+# size of each square
+square_height = height//8
+square_width = width//7
+squares = []
+
+# iterate over rows and columns
+for i in range(N):
+    for j in range(M):
+        # find the start point of each square
+        x = j * square_width
+        y = i * square_height
+
+        square = img[y:y+square_height, x:x+square_width]
+        # CHECK AVERAGE VALUES OF WHITE AND BLACK
+        myFile = open('sample.txt', 'r+')
+        # set the avg value to the ith row and jth column
+        meany = (np.mean(square == 0))
+        print(f'this is meany -> {meany}')
+        
+        if meany < 0.2:
+            square = 0
+            myMat[i][j] = square
+            print("HOLY SHIIITI")
+        else:
+            square = 1
+            myMat[i][j] = square
+
+            print("AYYY LMAOOO")
+
+
+        myFile.write(str(myMat))
+        myFile.close()
+        myFile = open('sample.txt', 'r')
+        text = myFile.read()
+
+        # add a square for every cell
+        cv.rectangle(img, (x, y), (x+square_width, y+square_height), (0, 255, 0))
+
+print(len(myMat))
+
+
+# display images
+cv.imshow('Original', img)
+cv.waitKey(0)
+cv.waitKey(0)  
+# Window shown waits for any key pressing event
+cv.destroyAllWindows()
