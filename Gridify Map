@@ -21,10 +21,10 @@ def grid_map():
             cell_end_x = (x + 1) * cell_width
             cell_start_y = y * cell_height
             cell_end_y = (y + 1) * cell_height
-            cell_space = map_data[cell_start_y:cell_end_y, cell_start_x:cell_end_x]
+            cell_space = map_data[cell_start_y:cell_end_y, cell_start_x:cell_end_x]#break pixels into cells
 
 
-            if np.any(cell_space): #check if any
+            if np.any(cell_space): #check if any black pixels .any returns true if 0 or None in array
                 black_pixels_percentage = np.mean(cell_space == 0) #black cells are 0
                 if black_pixels_percentage > 0.2:
                     cell_value = 1
