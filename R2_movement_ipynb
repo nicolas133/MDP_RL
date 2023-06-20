@@ -1,0 +1,51 @@
+#!/usr/bin/env python3
+#coding=utf-8
+import time
+import numpy as np
+import logging
+from Rosmaster_Lib import Rosmaster
+
+
+# turn on all 4 motors for 1 second, then shut them off
+# bot.set_motor(10, 10, 10, 10)
+
+# #time.sleep(1)
+
+# bot.set_motor(0, 0, 0, 0)
+
+bot.set_pwm_servo(1,180)
+time.sleep(1)
+bot.set_pwm_servo(1,90)
+time.sleep(2) # do nothing
+###############################
+
+bot.set_car_motion(1, 1, 0) # turn left then move
+
+time.sleep(0.5)
+
+bot.set_car_motion(0, 0, 1) # reset wheel
+
+del bot
+
+
+
+# if you want to log something, uncomment this to see how I logged an array
+
+# bot = Rosmaster()
+# logger = logging.getLogger()
+# logger.setLevel(logging.DEBUG)
+
+# states = np.zeros([8, 7])
+# # terminal state = bottom left
+# states[7][6] = 8
+
+# # blacked out states
+# states[7][5] = 1
+# states[7][4] = 1
+# states[7][3] = 1
+# states[7][0] = 1
+# states[0][3] = 1
+
+# logging.debug(states)
+# #width = .3374m, height = .2952m'
+
