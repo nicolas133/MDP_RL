@@ -2,8 +2,6 @@ from mdp_dp import *
 import gym
 import numpy as np
 
-# Added value function tests and code that moves the Rosmaster R2 robot while taking account for its orientation
-# By Keyron and Nic
 
 
 
@@ -105,14 +103,19 @@ def sendAction(action):
     if action == 2:
         print(f"R2 will perform this action: Turn Right")
     if action == 3:
-        print(f"R2 will perform this action: Drive Forward")
+        print(f"TTTTTTTTTTTTTTTTR2 will perform this action: Drive Forward")
 
+orientation_count = 3
 # alters actions for input on the Rosmaster R2 based on orientation
 for action in optimal_action_list:
     print(f"CURRENTLY READING ACTION = {action}")
     # Assume start facing North
-    orientation_count = 0
-    original_orientation = orientation_count
+    # this loops back to 0 once you've made a full revolution
+    orientation_count = orientation_count%4
+    # this loops back to 0 once you've made a full revolution
+    orientation = orientation_count%4
+    print(f"orientation count = {orientation_count}")
+
 
     # if turning left or right, switch orientation by rearranding the values of O_A_L
     face_N = {0:0, 1:1, 2:2, 3:3}
@@ -120,35 +123,55 @@ for action in optimal_action_list:
     face_S = {0:2, 1:3, 2:0, 3:1}
     face_E = {0:1, 1:2, 2:3, 3:0}
 
-    # orientation count keeps track of your current orientation
-    if action == 0:
-        orientation_count +=1
-        # BUG: Trying to perform the action ONCE before switching the orientation - this is why you
-        # will see turn left being repeated. If this is erased, the code will succesfully switch orientation, but the code will 
-        # move forward on every step instead of turning left once.
-        if original_orientation == 0:
-            sendAction(action)
-        continue
 
-    if action == 2:
-        orientation_count -=1
-
-    # this loops back to 0 once you've made a full revolution
-    orientation = orientation_count%3
-
-    # perform your action based on your current orientation
+    # perform your action based on your current orientation - corresponds with L,D,R,U = 0,1,2,3
     if orientation == 0:
-        sendAction(face_N[action])
-        print(f"I am currently facing North!\n")
-    if orientation == 1:
+        # change orientation count LEFT
+        if face_W[action] == 0:
+            orientation_count+=1
+        # change orientation count right
+        if face_W[action] == 2:
+            orientation_count-=1
+
         sendAction(face_W[action])
         print(f"I am currently facing West!\n")
-    if orientation == 2:
+
+    if orientation == 1:
+        # change orientation count LEFT
+        if face_S[action] == 0:
+            orientation_count+=1
+        # change orientation count RIGHT
+        if face_S[action] == 2:
+            orientation_count-=1
+
         sendAction(face_S[action])
         print(f"I am currently facing South!\n")
-    if orientation == 3:
+
+    if orientation == 2:
+        # change orientation count LEFT
+        if face_E[action] == 0:
+            orientation_count+=1
+        # change orientation count RIGHT
+        if face_E[action] == 2:
+            orientation_count=-1
+
         sendAction(face_E[action])
         print(f"I am currently facing East!\n")
+
+    if orientation == 3:
+        # change orientation count LEFT
+        if face_N[action] == 0:
+            orientation_count+=1
+        # change orientation count RIGHT
+        if face_N[action] == 2:
+            orientation_count-=1
+
+        sendAction(face_N[action])
+        print(f"I am currently facing North!\n")
+
+
+    # schmubbber
+
 
 
 #print(f"action value map: {V2}")
