@@ -1,51 +1,130 @@
-#!/usr/bin/env python3
-#coding=utf-8
-import time
 import numpy as np
+import time
 import logging
 from Rosmaster_Lib import Rosmaster
 
+# Create the Rosmaster object bot
+bot = Rosmaster()
+bot.set_pwm_servo(1, 100)
+time.sleep(2)
+bot.set_pwm_servo(1, 90)
+time.sleep(2)
+bot.set_pwm_servo(1, 80)
+time.sleep(2)
+bot.set_car_motion(0, 0, 0)  # resets wheel
+time.sleep(2)  # do nothing
 
-# turn on all 4 motors for 1 second, then shut them off
-# bot.set_motor(10, 10, 10, 10)
+# from Policy_iteration import optimal_action_list
 
-# #time.sleep(1)
-
-# bot.set_motor(0, 0, 0, 0)
-
-bot.set_pwm_servo(1,180)
-time.sleep(1)
-bot.set_pwm_servo(1,90)
-time.sleep(2) # do nothing
-###############################
-
-bot.set_car_motion(1, 1, 0) # turn left then move
-
-time.sleep(0.5)
-
-bot.set_car_motion(0, 0, 1) # reset wheel
-
-del bot
+optimal_action_list = [3, 3, 0, 0, 0, 0, 0, 3, 0, 3, 3, 3, 3]
 
 
+# prints the action performed by the Rosmaster R2
+def sendAction(action):
+    if action == 0:
+        print(f"R2 will perform this action: Turn Left")
+        time.sleep(2)
+        bot.set_pwm_servo(1, 80)  # set wheels straight
+        time.sleep(2)
+        bot.set_car_motion(0.3, 10, 0)  # left turn action
+        time.sleep(2.3)  # controls how long car turns left
+        ###############################
+        bot.set_car_motion(0, 0, 0)  # turn off motor
+        time.sleep(1)
+        bot.set_pwm_servo(1, 80)  # set wheels straight
+        time.sleep(2)
+        # turn motor off
+        bot.set_car_motion(0, 0, 0)
 
-# if you want to log something, uncomment this to see how I logged an array
+    if action == 1:
+        print(f"R2 will perform this action: Drive Backward")
+    if action == 2:
+        print(f"R2 will perform this action: Turn Right")
+        time.sleep(2)
+        bot.set_pwm_servo(1, 80)  # set wheels straight
+        time.sleep(2)
+        bot.set_car_motion(0.2, -10, 0)  # right turn action
+        time.sleep(3.35)  # controls how long car turns left
+        ###############################
+        bot.set_car_motion(0, 0, 0)  # turn off motor
+        time.sleep(1)
+        bot.set_pwm_servo(1, 80)  # set wheels straight
+        time.sleep(2)
+        # turn motor off
+        bot.set_car_motion(0, 0, 0)
 
-# bot = Rosmaster()
-# logger = logging.getLogger()
-# logger.setLevel(logging.DEBUG)
+    if action == 3:
+        print(f"R2 will perform this action: Drive Forward")
+        time.sleep(2)
+        bot.set_car_motion(1, 0, 0)  #
+        time.sleep(.25)
+        # time.sleep(.225)
+        bot.set_car_motion(0, 0, 0)
 
-# states = np.zeros([8, 7])
-# # terminal state = bottom left
-# states[7][6] = 8
 
-# # blacked out states
-# states[7][5] = 1
-# states[7][4] = 1
-# states[7][3] = 1
-# states[7][0] = 1
-# states[0][3] = 1
+orientation_count = 3
+# alters actions for input on the Rosmaster R2 based on orientation
+for action in optimal_action_list:
+    print(f"CURRENTLY READING ACTION = {action}")
+    # Assume start facing North
+    # this loops back to 0 once you've made a full revolution
+    orientation_count = orientation_count % 4
+    # this loops back to 0 once you've made a full revolution
+    orientation = orientation_count % 4
+    print(f"orientation count = {orientation_count}")
 
-# logging.debug(states)
-# #width = .3374m, height = .2952m'
+    # if turning left or right, switch orientation by rearranding the values of O_A_L
+    face_N = {0: 0, 1: 1, 2: 2, 3: 3}
+    face_W = {0: 3, 1: 0, 2: 1, 3: 2}
+    face_S = {0: 2, 1: 3, 2: 0, 3: 1}
+    face_E = {0: 1, 1: 2, 2: 3, 3: 0}
+
+    # perform your action based on your current orientation - corresponds with L,D,R,U = 0,1,2,3
+    if orientation == 0:
+        # change orientation count LEFT
+        if face_W[action] == 0:
+            orientation_count += 1
+        # change orientation count right
+        if face_W[action] == 2:
+            orientation_count -= 1
+
+        sendAction(face_W[action])
+        print(f"I am currently facing West!\n")
+
+    if orientation == 1:
+        # change orientation count LEFT
+        if face_S[action] == 0:
+            orientation_count += 1
+        # change orientation count RIGHT
+        if face_S[action] == 2:
+            orientation_count -= 1
+
+        sendAction(face_S[action])
+        print(f"I am currently facing South!\n")
+
+    if orientation == 2:
+        # change orientation count LEFT
+        if face_E[action] == 0:
+            orientation_count += 1
+        # change orientation count RIGHT
+        if face_E[action] == 2:
+            orientation_count = -1
+
+        sendAction(face_E[action])
+        print(f"I am currently facing East!\n")
+
+    if orientation == 3:
+        # change orientation count LEFT
+        if face_N[action] == 0:
+            orientation_count += 1
+        # change orientation count RIGHT
+        if face_N[action] == 2:
+            orientation_count -= 1
+
+        sendAction(face_N[action])
+        print(f"I am currently facing North!\n")
+
+    bot.set_car_motion(0, 0, 1)  # reset wheel
+
+    del bot
 
