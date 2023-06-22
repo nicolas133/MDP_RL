@@ -4,9 +4,6 @@ import numpy as np
 
 
 
-
-
-
 Race_Track= [
  'G' 'F' 'F' 'H' 'H' 'F' 'H',
  'F' 'F' 'H' 'H' 'H' 'F' 'H',
@@ -19,7 +16,7 @@ Race_Track= [
 ]
 
 gym.envs.register(
-    id='FrozenLake8x7NotSlippery-v0',
+    id='FrozenLake8x7NotSlippery-v0',a
     entry_point='gym.envs.toy_text.frozen_lake:FrozenLakeEnv',
     kwargs={'desc': Race_Track, 'is_slippery': False},  # Ensure it's not slippery
 
@@ -39,7 +36,8 @@ new_policy, V = policy_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8)
 # value iteration
 new_policy2, V2 = value_iteration(P, nS, nA, policy, gamma=0.9, tol=1e-8)
 
-
+# list of actions from the best policy
+optimal_action_list = []
 
 actions = ["left", "down", "right", "up"]
 
@@ -50,17 +48,45 @@ env.reset()
 env.render(mode='human')
 
 # Play the game using the policy obtained from policy iteration
+# done = False
+# while not done:
+#     action = np.argmax(new_policy[env.s])
+#     observation, reward, done, info = env.step(action)
+#     env.render(mode='human')
+
+# print(new_policy)
+
+# for state, action_probs in enumerate(new_policy):
+#     action = np.argmax(action_probs)
+#     print(action_probs)
+#     print(f"State {state} should take action {actions[action]}")
+
+
+# Play the game using the policy obtained from value iteration
+# print(f"Value Function from Policy Iteration: {V}")
+
+# 0: LEFT
+
+# 1: DOWN
+
+# 2: RIGHT
+
+# 3: UP
 done = False
 while not done:
-    action = np.argmax(new_policy[env.s])
-    observation, reward, done, info = env.step(action)
+    # locate and perform the best action from value_iteraiton's policy
+    action = np.argmax(new_policy2[env.s])
+    ob, reward, done, info = env.step(action)
+
+    # store every action in an array and print the environment
+    optimal_action_list.append(action)
     env.render(mode='human')
 
-
-for state, action_probs in enumerate(new_policy):
+for state_counter, action_probs in enumerate(new_policy2):
     action = np.argmax(action_probs)
     print(action_probs)
-    print(f"State {state} should take action {actions[action]}")
-#print(f"Value Function from Policy Iteration: {V}")
-#print(f"Policy from Value Iteration: {new_policy2}")
-#print(f"Value Function from Value Iteration: {V2}")
+    print(f"State {state_counter} should take action {actions[action]}")
+    #print(f"Expected value for state {state_counter} is  {V2[state_counter]}")
+
+# prints the list of actions R2 will take
+print(f"Optimal Action List = {optimal_action_list}")
