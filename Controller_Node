@@ -1,0 +1,58 @@
+import ropsy
+from nav_msgs.msg import Odometry
+from std_msgs.msg import Float64
+from pid_controller.pid import PID
+
+class controllerNode:
+    def __init__(self):
+        ropsy.init('contoller_node')
+
+        # Establish Publishers for sending proceseed info
+        self.speed_pub= rospy.Publisher('/speed_cmd',Float64,que_size=1)#memory of one message
+        self.steering_pub= rospy.Publisher('/steering_cmd',Float64,que_size=1)
+
+        # Establish Subscribers for recieving info for control
+        self.EFK_sub = ropsy.Subscriber('/odom',Odometry,self.Controller_callback)
+
+        #Create Contollers
+        self.Speed_PID = PID(kp=1,ki=1,kd=1)
+        self.Position_PID = PID(kp=1,ki=1,kd=1)
+        self.Steering_PID = PID(kp=1,ki=1,kd=1)
+
+    def Controller_callback(self,msg):
+        rospy.loginfo("Received IMU data with %d measurements", len(msg.ranges))
+        print(msg)
+        speed_error =self.Speed_error(msg)
+        position_error=self.Position_error(msg)
+        steering_error=self.Steering_error(msg)
+        new_S= self.Speed_PID(speed_error)
+        new_P= self.Position_PID(position_error)
+        new_SS= self.Steering_PID(steering_error)
+        self.speed_pub(new_S)
+        self.position_error(new_P)
+        self.steering_pub(new_SS)
+
+    def Speed_error(self,msg):
+        currentV=msg.twist.twist.linear.x
+    def Position_error(self,msg):
+
+        # get current position
+        x_cord=msg.pose.pose.position.x
+        y_cord=msg.pose.pose.position.y
+        z_cord=msg.pose.pose.position.z
+
+    def Steering_error(self,msg):
+        current_orientation = msg.pose.pose.orientation
+        current_orientation_euler = tf.transformations.euler_from_quaternion([
+        current_orientation.x,
+        current_orientation.y,
+        current_orientation.z,
+        current_orientation.w])
+        current_steering_angle= current_orientation_euler[2]
+
+    def run(self):
+        ropsy.spin()
+
+if __name__ == '__main__':
+     node = controllerNode()
+     node.run()
