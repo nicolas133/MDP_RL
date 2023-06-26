@@ -19,6 +19,34 @@ time.sleep(2)  # do nothing
 optimal_action_list = [3, 3, 0, 0, 0, 0, 0, 3, 0, 3, 3, 3, 3]
 
 
+# find reference position
+ref_point_x = 0
+ref_point_y = 0
+ref_points = [[0,0]]
+
+for elem in optimal_action_list:
+    print(f"current action - {elem}")
+    if elem == 0:
+        ref_point_x-=1
+        ref_points.append([ref_point_x, ref_point_y])
+        print(f"ref_point = {ref_points}")
+    if elem == 1:
+        ref_point_y-=1
+        ref_points.append([ref_point_x, ref_point_y])
+        print(f"ref_point = {ref_points}")
+    if elem == 2:
+        ref_point_x+=1
+        ref_points.append([ref_point_x, ref_point_y])
+        print(f"ref_point = {ref_points}")
+    if elem == 3:
+        ref_point_y+=1
+        ref_points.append([ref_point_x, ref_point_y])
+        print(f"ref_point = {ref_points}")
+
+ref_points = [ref_point_x, ref_point_y]
+print(f"reference points: {ref_points} ")
+
+
 # prints the action performed by the Rosmaster R2
 def sendAction(action):
     if action == 0:
@@ -62,6 +90,8 @@ def sendAction(action):
         bot.set_car_motion(0, 0, 0)
 
 
+orientation_list = []
+
 orientation_count = 3
 # alters actions for input on the Rosmaster R2 based on orientation
 for action in optimal_action_list:
@@ -89,6 +119,7 @@ for action in optimal_action_list:
             orientation_count -= 1
 
         sendAction(face_W[action])
+        orientation_list.append(270)
         print(f"I am currently facing West!\n")
 
     if orientation == 1:
@@ -100,6 +131,7 @@ for action in optimal_action_list:
             orientation_count -= 1
 
         sendAction(face_S[action])
+        orientation_list.append(180)
         print(f"I am currently facing South!\n")
 
     if orientation == 2:
@@ -111,6 +143,7 @@ for action in optimal_action_list:
             orientation_count = -1
 
         sendAction(face_E[action])
+        orientation_list.append(90)
         print(f"I am currently facing East!\n")
 
     if orientation == 3:
@@ -122,6 +155,7 @@ for action in optimal_action_list:
             orientation_count -= 1
 
         sendAction(face_N[action])
+        orientation_list.append(0)
         print(f"I am currently facing North!\n")
 
     bot.set_car_motion(0, 0, 1)  # reset wheel
