@@ -50,7 +50,7 @@ class controllerNode:
         z_cord=msg.pose.pose.position.z
         position_error = math.sqrt((x_cord - current_way[0]) ** 2 + (y_cord - current_way[1]) ** 2)
         if position_error < self.distance_thresh:
-            self.wayindex = (self.wayindex + 1) % len(self.waypoints)
+            self.wayindex = (self.wayindex + 1) 
         return position_error
 
     def Steering_error(self, msg,x_cord,y_cord):
