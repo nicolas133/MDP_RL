@@ -1,0 +1,27 @@
+#!/usr/bin/env python
+import rospy
+from std_msgs.msg import String
+from nav_msgs.msg import Odometry
+from singlePID import SinglePID
+
+class controllerNode:
+    def __init__(self):
+      rospy.init_node('contoller_node')
+	    rospy.Subscriber('/odom', Odometry, self.callback)
+	    rospy.spin()
+      print("CONTROLLER Initialized")
+      self.Speed_PID = SinglePID(P=1,I=1,D=1) # create single PID object
+
+    def callback(self, msg):
+	    Speed_PID = SinglePID(P=1,I=1,D=1)
+      print("PID DATA Received")
+	    currentV=msg.twist.twist.linear.x
+	    V_optimal=100
+	    new_S = Speed_PID.pid_compute(currentV,V_optimal)
+	    print(new_S)
+
+
+if __name__ == '__main__':
+
+	controller = controllerNode()
+	controller.run
