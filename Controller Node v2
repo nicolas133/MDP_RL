@@ -64,7 +64,7 @@ class controllerNode:
         print(next_waypoint)
         
 '''
-Issue: can't gauge distance from current waypoint and next one soley based on your x-cord.
+Issue: can't gauge distance from current waypoint and next one soley based on your x-cord., what if you're turning?
 Solution idea: keep track of current and next waypoints, and grab distance from those two with an
 incrementing value -> after 'next state yay!' is triggered, save current_x and current_y, and calculate
 position error as the differneces of those values and current. pos_err = sqrt(cur^2) - (old_x + old_y)^2)
