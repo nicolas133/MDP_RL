@@ -1,0 +1,334 @@
+#   KEYRON LINAREZ
+#   Modified code from Sutton and Barton Cliffwalker example
+#   TO DO:
+#   need to add obstacles
+#   need simplified list of just actions
+#   diagonals PROBABLY NOT - just add in polynomial fitting
+#  
+
+
+
+import numpy as np
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from tqdm import tqdm
+
+# world height
+WORLD_HEIGHT = 8
+
+# world width
+WORLD_WIDTH = 8
+
+# probability for exploration
+EPSILON = 0.1
+
+# step size
+ALPHA = 0.5
+
+# gamma for Q-Learning and Expected Sarsa
+GAMMA = 1
+
+# all possible actions
+ACTION_UP = 0
+ACTION_DOWN = 1
+ACTION_LEFT = 2
+ACTION_RIGHT = 3
+ACTIONS = [ACTION_UP, ACTION_DOWN, ACTION_LEFT, ACTION_RIGHT]
+           #ACTION_UP_RIGHT, ACTION_DOWN_RIGHT, ACTION_UP_LEFT, ACTION_DOWN_LEFT]
+
+# initial state action pair values
+# I,J == DEPTH x WIDTH
+START = [0, 0]
+GOAL = [7, 7]
+
+def step(state, action):
+    i, j = state
+
+    if action == ACTION_UP:
+        # I BOUNDED BY 0
+        next_state = [max(i - 1, 0), j]
+    elif action == ACTION_LEFT:
+        # J BOUNDED BY 0
+        next_state = [i, max(j - 1, 0)]
+    elif action == ACTION_RIGHT:
+        # J BOUNDED BY WORLD WIDTH
+        next_state = [i, min(j + 1, WORLD_WIDTH - 1)]
+    elif action == ACTION_DOWN:
+        # I BOUNDED BY WORLD HEIGHT
+        next_state = [min(i + 1, WORLD_HEIGHT - 1), j]
+    else:
+        next_state = START
+    # -1 reward per every step
+    reward = -1
+
+#TRING TO IMPLEMENT DIAGONALS
+#    elif action == ACTION_DOWN_RIGHT:
+#        # J BOUNDED BY WORLD WIDTH
+#        next_state = [min(i + 1, WORLD_HEIGHT - 1), min(j + 1, WORLD_WIDTH - 1)]
+#    elif action == ACTION_UP_LEFT:
+#        # J BOUNDED BY 0
+#        next_state = [max(i - 1, 0), max(j - 1, 0)]
+#    elif action == ACTION_DOWN_LEFT:
+#        # I BOUNDED BY WORLD HEIGHT
+#        next_state = [min(i + 1, WORLD_HEIGHT - 1), max(j - 1, 0)]
+
+
+
+    '''
+    # CLIFF BOUNDARIES:
+    # if you move DOWN within the range of i > 2 and j > 10, FALL OFF CLIFF
+    if (action == ACTION_DOWN and i == 2 and 1 <= j <= 10) or (
+        action == ACTION_RIGHT and state == START):
+        # -100 reward for falling off the cliff
+        reward = -100
+        next_state = START
+    '''
+    # MAP BOUNDARIES:
+    # if you out of boundaries, subtract 100 reward
+    if (action == ACTION_LEFT and j == 0) or (action == ACTION_RIGHT and j == WORLD_WIDTH-1) or (action == ACTION_DOWN and i == WORLD_HEIGHT-1) or (action == ACTION_UP and i == 0):
+    # tryin to implement diagonal mvmt
+    #(action == ACTION_UP_RIGHT and (i == 0 or j == WORLD_WIDTH-1)) or (action == ACTION_DOWN_RIGHT and (i == WORLD_HEIGHT-1 or j == WORLD_WIDTH-1)) or (action == ACTION_UP_LEFT and (i == 0 or j == 0)) or (action == ACTION_DOWN_LEFT and (i == WORLD_HEIGHT-1 or j == 0)):
+
+        reward = -100
+        next_state = state
+
+    return next_state, reward
+
+
+
+    
+
+# choose an action based on epsilon greedy algorithm
+def choose_action(state, q_value):
+    if np.random.binomial(1, EPSILON) == 1:
+        # if 1/10 chance reached, choose random policy
+        return np.random.choice(ACTIONS)
+    else:
+        #adfajfadoajfa ERROR TWO LINES DOWN
+        # else choose optimal greedy policy
+        values_ = q_value[state[0], state[1], :]
+        
+        # this chonker
+        return np.random.choice([action_ for action_, value_ in enumerate(values_) if value_ == np.max(values_)])
+
+# an episode with Sarsa
+# @q_value: values for state action pair, will be updated
+# @expected: if True, will use expected Sarsa algorithm
+# @step_size: step size for updating
+# @return: total rewards within this episode
+def sarsa(q_value, expected=False, step_size=ALPHA):
+    state = START
+    action = choose_action(state, q_value)
+    rewards = 0.0
+    target = 0.0
+    while state != GOAL:
+        # return new state
+        next_state, reward = step(state, action)
+        # get next action
+        next_action = choose_action(next_state, q_value)
+        rewards += reward
+        #print ('reward = ' + str(reward))
+        #print ('next action = ' + str(next_action))
+
+        target = q_value[next_state[0], next_state[1], next_action]
+        target *= GAMMA
+        q_value[state[0], state[1], action] += step_size * (
+                reward + target - q_value[state[0], state[1], action])
+        state = next_state
+        action = next_action
+    return rewards
+
+# an episode with Q-Learning
+# @q_value: values for state action pair, will be updated
+# @step_size: step size for updating
+# @return: total rewards within this episode
+def q_learning(q_value, step_size=ALPHA):
+    state = START
+    rewards = 0.0
+    while state != GOAL:
+        action = choose_action(state, q_value)
+        next_state, reward = step(state, action)
+        rewards += reward
+        # Q-Learning update
+        q_value[state[0], state[1], action] += step_size * (
+                reward + GAMMA * np.max(q_value[next_state[0], next_state[1], :]) -
+                q_value[state[0], state[1], action])
+        state = next_state
+    return rewards
+
+# print optimal policy
+def print_optimal_policy(q_value):
+    optimal_policy = []
+    for i in range(0, WORLD_HEIGHT):
+        optimal_policy.append([])
+        for j in range(0, WORLD_WIDTH):
+            if [i, j] == GOAL:
+                optimal_policy[-1].append('G')
+                continue
+            bestAction = np.argmax(q_value[i, j, :])
+            if bestAction == ACTION_UP:
+                optimal_policy[-1].append('U')
+            elif bestAction == ACTION_DOWN:
+                optimal_policy[-1].append('D')
+            elif bestAction == ACTION_LEFT:
+                optimal_policy[-1].append('L')
+            elif bestAction == ACTION_RIGHT:
+                optimal_policy[-1].append('R')
+
+            #elif bestAction == ACTION_UP_RIGHT:
+            #    optimal_policy[-1].append('UR')
+            #elif bestAction == ACTION_DOWN_RIGHT:
+            #    optimal_policy[-1].append('DR')
+            #elif bestAction == ACTION_UP_LEFT:
+            #    optimal_policy[-1].append('UL')
+            #elif bestAction == ACTION_DOWN_LEFT:
+            #    optimal_policy[-1].append('DL')
+
+    for row in optimal_policy:
+        print(row)
+
+# Use multiple runs instead of a single run and a sliding window
+# With a single run I failed to present a smooth curve
+# However the optimal policy converges well with a single run
+# Sarsa converges to the safe path, while Q-Learning converges to the optimal path
+def figure_6_9():
+    # episodes of each run
+    episodes = 1000
+    # perform 40 independent runs
+    runs = 20
+    rewards_sarsa = np.zeros(episodes)
+    rewards_qlearning = np.zeros(episodes)
+    for r in tqdm(range(runs)):
+        # THIRD DIMENSIONS = # OF POSSIBLE ACTIONS
+        q_sarsa = np.zeros((WORLD_HEIGHT, WORLD_WIDTH,  len(ACTIONS)))
+        q_qlearning = np.zeros((WORLD_HEIGHT, WORLD_WIDTH,  len(ACTIONS)))
+        #print (q_sarsa)
+        for i in range(0, episodes):
+            # cut off the value by -100 to draw the figure more elegantly
+            # rewards_sarsa[i] += max(sarsa(q_sarsa), -100)
+            # rewards_q_learning[i] += max(q_learning(q_q_learning), -100)
+            rewards_sarsa[i] += sarsa(q_sarsa)
+            rewards_qlearning[i] += q_learning(q_qlearning)
+
+    # averaging over independt runs
+    rewards_sarsa /= runs
+    rewards_qlearning /= runs
+
+    # draw reward curves
+    plt.plot(rewards_sarsa, label='Sarsa')
+    plt.plot(rewards_qlearning, label='Q-Learning')
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of rewards during episode')
+    plt.ylim([-100, 0])
+    plt.legend()
+
+    plt.savefig('d:\WUSEF2023/figure_6_9.png')
+    plt.close()
+
+    # display optimal policy
+    print('Sarsa Optimal Policy:')
+    print_optimal_policy(q_sarsa)
+    print('Q-Learning Optimal Policy:')
+    print_optimal_policy(q_qlearning)
+
+#if __name__ == '__main__':
+#    figure_6_9()
+
+
+
+# Use multiple runs instead of a single run and a sliding window
+# With a single run I failed to present a smooth curve
+# However the optimal policy converges well with a single run
+# Sarsa converges to the safe path, while Q-Learning converges to the optimal path
+def figure_6_4():
+    # episodes of each run
+    episodes = 500
+
+    # perform 40 independent runs
+    runs = 50
+
+    rewards_sarsa = np.zeros(episodes)
+    rewards_q_learning = np.zeros(episodes)
+    for r in tqdm(range(runs)):
+        q_sarsa = np.zeros((WORLD_HEIGHT, WORLD_WIDTH, 4))
+        q_q_learning = np.copy(q_sarsa)
+        for i in range(0, episodes):
+            # cut off the value by -100 to draw the figure more elegantly
+            # rewards_sarsa[i] += max(sarsa(q_sarsa), -100)
+            # rewards_q_learning[i] += max(q_learning(q_q_learning), -100)
+            rewards_sarsa[i] += sarsa(q_sarsa)
+            rewards_q_learning[i] += q_learning(q_q_learning)
+
+    # averaging over independt runs
+    rewards_sarsa /= runs
+    rewards_q_learning /= runs
+
+    # draw reward curves
+    plt.plot(rewards_sarsa, label='Sarsa')
+    plt.plot(rewards_q_learning, label='Q-Learning')
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of rewards during episode')
+    plt.ylim([-100, 0])
+    plt.legend()
+
+    plt.savefig('d:\WUSEF2023/figure_6_4.png')
+    plt.close()
+
+    # display optimal policy
+    print('Sarsa Optimal Policy:')
+    print_optimal_policy(q_sarsa)
+    print('Q-Learning Optimal Policy:')
+    print_optimal_policy(q_q_learning)
+
+
+# Due to limited capacity of calculation of my machine, I can't complete this experiment
+# with 100,000 episodes and 50,000 runs to get the fully averaged performance
+# However even I only play for 1,000 episodes and 10 runs, the curves looks still good.
+def figure_6_6():
+    step_sizes = np.arange(0.1, 1.1, 0.1)
+    episodes = 1000
+    runs = 10
+
+    ASY_SARSA = 0
+    ASY_QLEARNING = 2
+    INT_SARSA = 3
+    INT_EXPECTED_SARSA = 4
+    INT_QLEARNING = 5
+    methods = range(0, 6)
+
+    # ANALYZE THIS SHIT
+    performace = np.zeros((6, len(step_sizes)))
+    for run in range(runs):
+        for ind, step_size in tqdm(list(zip(range(0, len(step_sizes)), step_sizes))):
+            q_sarsa = np.zeros((WORLD_HEIGHT, WORLD_WIDTH, 4))
+            q_expected_sarsa = np.copy(q_sarsa)
+            q_q_learning = np.copy(q_sarsa)
+            for ep in range(episodes):
+                sarsa_reward = sarsa(q_sarsa, expected=False, step_size=step_size)
+                q_learning_reward = q_learning(q_q_learning, step_size=step_size)
+                performace[ASY_SARSA, ind] += sarsa_reward
+                performace[ASY_QLEARNING, ind] += q_learning_reward
+
+                if ep < 100:
+                    performace[INT_SARSA, ind] += sarsa_reward
+                    performace[INT_QLEARNING, ind] += q_learning_reward
+
+    performace[:3, :] /= episodes * runs
+    performace[3:, :] /= 100 * runs
+    labels = ['Asymptotic Sarsa', 'Asymptotic Q-Learning',
+              'Interim Sarsa', 'Interim Expected Sarsa', 'Interim Q-Learning']
+
+    for method, label in zip(methods, labels):
+        plt.plot(step_sizes, performace[method, :], label=label)
+    plt.xlabel('alpha')
+    plt.ylabel('reward per episode')
+    plt.legend()
+
+    plt.savefig('d:\WUSEF2023/figure_6_6.png')
+    plt.close()
+
+if __name__ == '__main__':
+    figure_6_4()
+    figure_6_6()
+    figure_6_9
